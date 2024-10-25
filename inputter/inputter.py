@@ -80,4 +80,3 @@ class Inputter:
         if no_input_msg:
             print(no_input_msg)
         return no_input_val, None
-

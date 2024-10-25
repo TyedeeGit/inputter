@@ -1,20 +1,12 @@
 from string import digits
 from typing import Optional, Callable, TypeVar, Generic
-from dataclasses import dataclass
 
 T = TypeVar('T')
 U = TypeVar('U')
 V = TypeVar('V')
 
 
-@dataclass
 class Condition(Generic[T]):
-    cond: Callable[[str], bool]
-    handle: Callable[[str], T]
-    name: str = ""
-    new_prompt: str = ""
-    is_error: bool = False
-
     def __init__(self, cond: Callable[[str], bool], handle: Callable[[str], T], name: str = "", new_prompt: str = "",
                  is_error: bool = False) -> None:
         """
@@ -23,9 +15,32 @@ class Condition(Generic[T]):
         :param handle: Handles a filtered string.
         :param name: Name of the condition, if provided.
         :param new_prompt: The new prompt to switch to after handling, if provided.
-        :param is_error: If true, treat this condition as an error condition.
+        :param is_error: If ``True``, treat this condition as an error condition.
         """
-        super()
+        self.cond = cond
+        """
+        A filter for which strings to handle.
+        """
+
+        self.handle = handle
+        """
+        Handles a filtered string.
+        """
+
+        self.name = name
+        """
+        Name of the condition, if provided.
+        """
+
+        self.new_prompt = new_prompt
+        """
+        The new prompt to switch to after handling, if provided.
+        """
+
+        self.is_error = is_error
+        """
+        If ``True``, treat this condition as an error condition.
+        """
 
     def __neg__(self):
         """

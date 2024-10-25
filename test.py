@@ -21,6 +21,5 @@ def main():
     print(f"Then, add the {meat}")
     print(f"Finally, add the {condiment}")
 
-
 if __name__ == '__main__':
     main()
