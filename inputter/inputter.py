@@ -1,4 +1,6 @@
 from typing import Any, Optional, Callable
+
+from . import nonempty_condition
 from .condition import Condition, null_condition
 from dataclasses import dataclass
 
@@ -72,6 +74,7 @@ class Inputter:
             for cond in self.conditions + (null_condition(new_prompt=prompt, is_error=True),):
                 if cond.cond(string):
                     if cond.is_error:
+                        cond.handle(string)
                         if cond.new_prompt:
                             current_prompt = cond.new_prompt.format(string=string)
                         break
@@ -80,3 +83,24 @@ class Inputter:
         if no_input_msg:
             print(no_input_msg)
         return no_input_val, None
+
+def yes_no_inputter(prompt: str, err_prompt: str, yes: set[str] = frozenset({'y', 'yes', 'yep'}),
+                    no: set[str] = frozenset({'n', 'no', 'nope'}),
+                    no_input_msg="", no_input_val: bool = False, attempts: int = 0) -> Inputter:
+    """
+    Inputter for yes/no decisions.
+    :param prompt: The initial prompt to ask the user for input.
+    :param err_prompt: The error prompt if the user does not input a yes or no.
+    :param yes: The set of strings considered as a yes.
+    :param no: The set of strings considered as a no.
+    :param no_input_msg: The message displayed when no valid input is provided.
+    :param no_input_val: The value returned when no valid input is provided.
+    :param attempts: The number of attempts to give the user before giving up. Setting to zero or a negative number will give unlimited attempts.
+    :return:
+    """
+    conditions = (
+        Condition(lambda x: x.lower() in yes, lambda x: True),
+        Condition(lambda x: x.lower() in no, lambda x: False),
+        nonempty_condition(new_prompt=err_prompt, is_error=True)
+    )
+    return Inputter(conditions, prompt, no_input_msg, no_input_val, attempts)

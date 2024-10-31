@@ -1,5 +1,6 @@
 from string import digits
 from typing import Optional, Callable, TypeVar, Generic
+from collections.abc import Container
 
 T = TypeVar('T')
 U = TypeVar('U')
@@ -110,14 +111,12 @@ def is_valid_float(string: str) -> bool:
     :param string:
     :return:
     """
-    vals = string.split('.')
-    match vals:
-        case str(a):
-            return is_valid_int(a)
-        case str(a), str(b):
-            return is_valid_int(a) and (is_pos_int(b) or not b)
-        case _:
-            return False
+    if is_valid_int(string):
+        return True
+    if len(string.split('.')) == 2:
+        x, y = string.split('.')
+        return is_valid_int(x) and (is_pos_int(y) or not y)
+    return False
 
 
 def int_condition(handle: Callable[[int], T] = lambda x: x, name: str = "", new_prompt: str = "",
@@ -213,10 +212,41 @@ def le_condition(y: T, handle: Callable[[V], U] = lambda x: x,
     """
     return Condition(lambda x: cond(x) and conv(x) <= y, lambda x: handle(conv(x)), name, new_prompt, is_error)
 
+def eq_condition(y: T, handle: Callable[[V], U] = lambda x: x,
+                 cond: Callable[[str], bool] = lambda x: True, conv: Callable[[str], V] = lambda x: x,
+                 name: str = "", new_prompt: str = "", is_error: bool = False) -> Condition[U]:
+    """
+    Condition for handling an input equal to ``y``.
+    :param y: The second argument for comparison.
+    :param handle: Handle the provided object, or do nothing if not provided.
+    :param cond: Condition for converting the input to the required type.
+    :param conv: Convert the input to the required type.
+    :param name: Name of the condition, if provided.
+    :param new_prompt: The new prompt to switch to after handling, if provided.
+    :param is_error: If ``True``, treat this condition as an error condition.
+    :return:
+    """
+    return Condition(lambda x: cond(x) and conv(x) == y, lambda x: handle(conv(x)), name, new_prompt, is_error)
 
-def range_condition(values: range, handle: Callable[[int], T] = lambda x: x,
-                    cond: Callable[[str], bool] = is_valid_int, conv: Callable[[str], int] = int, name: str = "",
-                    new_prompt: str = "", is_error: bool = False) -> Condition[T]:
+
+def contains_condition(values: Container[T], handle: Callable[[T], V] = lambda x: x,
+                       cond: Callable[[str], bool] = lambda x: True, conv: Callable[[str], T] = lambda x: x, name: str = "",
+                       new_prompt: str = "", is_error: bool = False) -> Condition[V]:
+    """
+    Condition for handling an input inside a container.
+    :param values: The valid container of values.
+    :param handle: Handle the provided object, or do nothing if not provided.
+    :param cond: Condition for converting the input to the required type.
+    :param conv: Convert the input to the required type.
+    :param name: Name of the condition, if provided.
+    :param new_prompt: The new prompt to switch to after handling, if provided.
+    :param is_error: If ``True``, treat this condition as an error condition.
+    :return:
+    """
+    return Condition(lambda x: cond(x) and conv(x) in values, lambda x: handle(conv(x)), name, new_prompt, is_error)
+
+def range_condition(values: range, handle: Callable[[int], T] = lambda x: x, name: str = "",
+                    new_prompt: str = "", is_error: bool = False) -> Condition[V]:
     """
     Condition for handling an input inside a range.
     :param values: The valid range of values.
@@ -228,7 +258,7 @@ def range_condition(values: range, handle: Callable[[int], T] = lambda x: x,
     :param is_error: If ``True``, treat this condition as an error condition.
     :return:
     """
-    return Condition(lambda x: cond(x) and conv(x) in values, lambda x: handle(conv(x)), name, new_prompt, is_error)
+    return contains_condition(values, handle, is_valid_int, int, name, new_prompt, is_error)
 
 
 def nonempty_condition(value: Optional[T] = None, name: str = "", new_prompt: str = "",
