@@ -1,7 +1,5 @@
 from typing import Any, Optional, Callable
-
-from . import nonempty_condition
-from .condition import Condition, null_condition
+from . import nonempty_condition, contains_condition, Condition, null_condition
 from dataclasses import dataclass
 
 def loop() -> None:
@@ -99,8 +97,8 @@ def yes_no_inputter(prompt: str, err_prompt: str, yes: set[str] = frozenset({'y'
     :return:
     """
     conditions = (
-        Condition(lambda x: x.lower() in yes, lambda x: True),
-        Condition(lambda x: x.lower() in no, lambda x: False),
+        contains_condition(yes, conv=str.lower),
+        contains_condition(no, conv=str.lower),
         nonempty_condition(new_prompt=err_prompt, is_error=True)
     )
     return Inputter(conditions, prompt, no_input_msg, no_input_val, attempts)
